@@ -2,7 +2,7 @@ use proc_macro::TokenStream;
 
 use quote::quote;
 
-use syn::{parse_macro_input, Data, DeriveInput, Fields, Type};
+use syn::{parse_macro_input, parse_str, Data, DeriveInput, Fields, LitStr, Type};
 
 struct RusqliteAttr {
     try_from: Option<Type>,
@@ -15,9 +15,18 @@ fn parse_rusqlite_attr(input: &DeriveInput) -> syn::Result<RusqliteAttr> {
         if attr_item.path().is_ident("rusqlite") {
             attr_item.parse_nested_meta(|meta| {
                 if meta.path.is_ident("try_from") {
-                    let value: Type = meta.value()?.parse()?;
+                    // Parse as string literal (matching serde's API)
+                    let lit: LitStr = meta.value()?.parse()?;
+                    // Parse the string content as a Type
+                    let type_str = lit.value();
+                    let ty: Type = parse_str(&type_str).map_err(|e| {
+                        syn::Error::new_spanned(
+                            &lit,
+                            format!("failed to parse '{}' as a type: {}", type_str, e),
+                        )
+                    })?;
 
-                    attr.try_from = Some(value);
+                    attr.try_from = Some(ty);
 
                     Ok(())
                 } else {

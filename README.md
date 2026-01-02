@@ -18,13 +18,13 @@ pub struct Username(
 ```
 
 ```rust
-use rusqlite_derive::FromSql;
+use rusqlite_derive::{FromSql, ToSql};
 
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, FromSql, ToSql)]
-#[serde(try_from = String)]
-#[rusqlite(try_from = String)]
+#[serde(try_from = "String")]
+#[rusqlite(try_from = "String")]
 pub struct Username(String);
 
 impl TryFrom<String> for Username {
